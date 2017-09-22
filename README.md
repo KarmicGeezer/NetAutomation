@@ -1,16 +1,11 @@
 # NetAutomation
 Homework for the IPSpace Network Automation course
 
-A simple lab topology conisisting of:
+The topology is used VIRL with a CentOS VM.
 
-Two sites:
-    Each site has 4 x NX-OSv routers
-    A single OSPF area
-    Site BPG ASN
-    Linux server
+Two topologies have been created:
 
-The two sites will connect via a pair of IOSv routers acting as a dual core.
+1) IPSpaceLab.virl:  Dual site (each with 4 x NX-OSv's in a single OSPF area and single BGP AS) connecting to a dual core 
 
-The topology also allows me to add ASAv firewalls later.
+2) IPSpaceLab2.vir:l Singe site (4 x NX-OSv's in a single OSPF area and single BGP AS) connecting to a dual core
 
-For simplicity, at times only one site will be powered up.
