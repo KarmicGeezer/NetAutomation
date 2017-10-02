@@ -1,0 +1,110 @@
+---
+- name: Cleanup files from last run
+  hosts: localhost
+  tasks:
+
+    - file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "./csr100v-1.txt"
+        - "./csr100v-2.txt"
+
+- name: Interface status and connectivity test
+  hosts: ios
+  gather_facts: no
+  connection: local
+
+  vars:
+    cli_ssh:
+      host: "{{ ansible_host }}"
+      username: cisco
+      password: cisco
+
+  tasks:
+     - name: Show interface Status
+       ios_command:
+         provider: "{{ cli_ssh }}"
+         commands:
+           - show ip int bri
+       register: printout
+
+     - set_fact:
+        ip_addr: |
+          {{printout.stdout_lines[0] |
+             map('regex_findall','^.* ([0-9./]+)') |
+             map('join') | list | ipaddr }}
+
+     - set_fact:
+         addr: "{{ ip_addr | reject('search','172.16') | list }}"
+
+- name: Ping core routers from NX-OS hosts
+  hosts: nx-os
+  gather_facts: no
+  connection: local
+
+  vars:
+    cli_ssh:
+      host: "{{ ansible_host }}"
+      username: cisco
+      password: cisco
+      transport: cli
+
+  tasks:
+     - name: Ping CSR100v-1 interfaces
+       nxos_ping:
+         provider: "{{ cli_ssh }}"
+         dest: "{{ item }}"
+         vrf: default
+       with_items:
+         - "{{ hostvars['csr100v-1']['addr'] }}"
+       register: ping_results
+
+     - set_fact: 
+         packet_loss: "{{ ping_results.results | map(attribute='packet_loss') | list }}"
+
+     - set_fact: 
+         device_ip: "{{ ping_results.results | map(attribute='item') | list }}"
+
+     - lineinfile:
+         dest: ./csr100v-1.txt
+         line: "{{ ansible_host }} -> Host: {{ item.0 }} Packet Loss: {{ item.1 }}"
+         create: yes
+       with_together:
+         - "{{ device_ip }}"
+         - "{{ packet_loss }}" 
+
+     - debug:
+         msg: "Host: {{ item.0 }} Packet Loss: {{ item.1 }}"
+       with_together:
+         - "{{ device_ip }}"
+         - "{{ packet_loss }}"
+
+     - name: Ping CSR100v-2 interfaces
+       nxos_ping:
+         provider: "{{ cli_ssh }}"
+         dest: "{{ item }}"
+         vrf: default
+       with_items:
+         - "{{ hostvars['csr100v-2']['addr'] }}"
+       register: ping_results
+
+     - set_fact: 
+         packet_loss: "{{ ping_results.results | map(attribute='packet_loss') | list }}"
+
+     - set_fact: 
+         device_ip: "{{ ping_results.results | map(attribute='item') | list }}"
+
+     - lineinfile:
+         dest: ./csr100v-2.txt
+         line: "{{ ansible_host }} -> Host: {{ item.0 }} Packet Loss: {{ item.1 }}"
+         create: yes
+       with_together:
+         - "{{ device_ip }}"
+         - "{{ packet_loss }}" 
+
+     - debug:
+         msg: "Host: {{ item.0 }} Packet Loss: {{ item.1 }}"
+       with_together:
+         - "{{ device_ip }}"
+         - "{{ packet_loss }}"

@@ -1,0 +1,9 @@
+[ios]
+csr100v-1 ansible_host=172.16.1.205
+csr100v-2 ansible_host=172.16.1.206
+
+[nx-os]
+nx-osv-1 ansible_host=172.16.1.203
+nx-osv-2 ansible_host=172.16.1.204
+nx-osv-3 ansible_host=172.16.1.201
+nx-osv-4 ansible_host=172.16.1.202
